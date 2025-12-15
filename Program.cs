@@ -37,6 +37,21 @@ builder.Services.AddScoped<IUserClaimsPrincipalFactory<SUPFLYUser>, UserClaimsPr
 builder.Services.AddRazorPages();
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        // This calls the static InitializeAsync method to create roles and admin user
+        await SeedData.InitializeAsync(services);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while seeding the database.");
+    }
+}
+
 // Seeding the database (DbInitializer is fine here)
 using (var scope = app.Services.CreateScope())
 {
