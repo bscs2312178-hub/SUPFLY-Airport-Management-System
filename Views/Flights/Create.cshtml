@@ -1,0 +1,91 @@
+﻿@model SUPFLY.Models.Flight
+@using Microsoft.AspNetCore.Mvc.Rendering
+@inject SUPFLY.Data.ApplicationDbContext _context
+
+@{
+    ViewData["Title"] = "Create Flight";
+}
+
+<h1>Create Flight</h1>
+
+<h4>Flight Details</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create">
+            <div asp-validation-summary="All" class="text-danger"></div>
+
+            <div class="form-group">
+                <label asp-for="FlightNumber" class="control-label"></label>
+                <input asp-for="FlightNumber" class="form-control" />
+                <span asp-validation-for="FlightNumber" class="text-danger"></span>
+            </div>
+
+            @* --- DROPDOWN FOR AIRCRAFT CODE --- *@
+            <div class="form-group">
+                <label asp-for="AircraftId" class="control-label">Aircraft Code</label>
+                @* This uses a SelectList to show the Model code but passes the Model code (string) as the value *@
+                <select name="AircraftModelCode" class="form-control"
+                        asp-items="@(new SelectList(_context.Aircrafts.Select(a => new { Value = a.Model, Text = a.Model }), "Value", "Text"))">
+                    <option value="">-- Select Aircraft Code --</option>
+                </select>
+                @* We still use the custom error message key *@
+                @Html.ValidationMessage("AircraftModelCode", new { @class = "text-danger" })
+            </div>
+
+            @* --- DROPDOWN FOR ORIGIN AIRPORT CODE --- *@
+            <div class="form-group">
+                <label asp-for="FromAirportId" class="control-label">From Airport Code</label>
+                @* This uses a SelectList to show the Code but passes the Code (string) as the value *@
+                <select name="FromAirportCode" class="form-control"
+                        asp-items="@(new SelectList(_context.Airports.Select(a => new { Value = a.Code, Text = a.Code }), "Value", "Text"))">
+                    <option value="">-- Select Origin Code --</option>
+                </select>
+                @Html.ValidationMessage("FromAirportCode", new { @class = "text-danger" })
+            </div>
+
+            @* --- DROPDOWN FOR DESTINATION AIRPORT CODE --- *@
+            <div class="form-group">
+                <label asp-for="ToAirportId" class="control-label">To Airport Code</label>
+                @* This uses a SelectList to show the Code but passes the Code (string) as the value *@
+                <select name="ToAirportCode" class="form-control"
+                        asp-items="@(new SelectList(_context.Airports.Select(a => new { Value = a.Code, Text = a.Code }), "Value", "Text"))">
+                    <option value="">-- Select Destination Code --</option>
+                </select>
+                @Html.ValidationMessage("ToAirportCode", new { @class = "text-danger" })
+            </div>
+
+            <div class="form-group">
+                <label asp-for="DepartureTime" class="control-label"></label>
+                <input asp-for="DepartureTime" class="form-control" />
+                <span asp-validation-for="DepartureTime" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="ArrivalTime" class="control-label"></label>
+                <input asp-for="ArrivalTime" class="form-control" />
+                <span asp-validation-for="ArrivalTime" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Price" class="control-label"></label>
+                <input asp-for="Price" class="form-control" />
+                <span asp-validation-for="Price" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

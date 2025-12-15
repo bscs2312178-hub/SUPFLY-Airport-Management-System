@@ -1,0 +1,52 @@
+﻿@model SUPFLY.Models.BookingSearchModel
+
+@{
+    ViewData["Title"] = "Book Your Flight";
+}
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <h2 class="text-center mb-4">Book Your Flight</h2>
+        <p class="text-center text-muted">Enter your origin, destination, and desired date to find available flights.</p>
+
+        <div class="card shadow-sm mt-4">
+            <div class="card-body">
+                <form asp-action="FindFlights" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div class="row">
+                        <div class="col-md-4 form-group">
+                            <label asp-for="Origin" class="control-label"></label>
+                            <input asp-for="Origin" class="form-control" placeholder="e.g., JFK" />
+                            <span asp-validation-for="Origin" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-4 form-group">
+                            <label asp-for="Destination" class="control-label"></label>
+                            <input asp-for="Destination" class="form-control" placeholder="e.g., LAX" />
+                            <span asp-validation-for="Destination" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-4 form-group">
+                            <label asp-for="DepartureDate" class="control-label"></label>
+                            <input asp-for="DepartureDate" class="form-control" type="date" />
+                            <span asp-validation-for="DepartureDate" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group text-center mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-plane"></i> Search Flights
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

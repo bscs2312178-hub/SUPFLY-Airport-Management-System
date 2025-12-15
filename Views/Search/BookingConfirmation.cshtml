@@ -1,0 +1,28 @@
+﻿@model SUPFLY.Models.Booking
+
+@{
+    ViewData["Title"] = "Booking Confirmed!";
+}
+
+<div class="row">
+    <div class="col-md-8 offset-md-2 text-center">
+        <div class="card shadow-lg border-success">
+            <div class="card-body">
+                <h1 class="text-success"><i class="fas fa-check-circle fa-2x mb-3"></i></h1>
+                <h2 class="card-title">Booking Confirmed!</h2>
+                <p class="card-text lead">Your reservation has been successfully processed.</p>
+
+                <hr class="my-4">
+
+                <h4 class="text-primary">Booking ID: #@Model.Id</h4>
+                <p>Flight: @Model.Flight.FromAirport.Code &rarr; @Model.Flight.ToAirport.Code</p>
+                <p>Date: @Model.Flight.DepartureTime.ToString("dd MMM yyyy") | Seat: **@Model.SeatNumber**</p>
+                <p class="lead text-danger">Price Paid: **@Model.PricePaid.ToString("C")**</p>
+
+                <hr class="my-4">
+                <a asp-controller="Home" asp-action="Index" class="btn btn-primary btn-lg">Return Home</a>
+                <a href="/Identity/Account/Manage" class="btn btn-outline-primary btn-lg">View My Bookings</a>
+            </div>
+        </div>
+    </div>
+</div>

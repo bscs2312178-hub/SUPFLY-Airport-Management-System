@@ -1,0 +1,69 @@
+﻿@model IEnumerable<SUPFLY.Models.Flight>
+
+@{
+    ViewData["Title"] = "Search Results";
+    var searchModel = ViewData["SearchModel"] as SUPFLY.Models.BookingSearchModel;
+}
+
+<h2 class="text-center mb-4">Flight Search Results</h2>
+
+@if (searchModel != null)
+{
+    <div class="alert alert-info text-center" role="alert">
+        Flights found for **@searchModel.Origin** to **@searchModel.Destination** on **@searchModel.DepartureDate.ToShortDateString()**.
+    </div>
+}
+
+@if (Model.Any())
+{
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Flight Number</th>
+                <th>Departure</th>
+                <th>Arrival</th>
+                <th>Aircraft</th>
+                <th>Price</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@Html.DisplayFor(modelItem => item.FlightNumber)</td>
+
+                    @* FIXED: Use FromAirport.Code and ToAirport.Code *@
+                    <td>@item.FromAirport.Code (@item.DepartureTime.ToString("HH:mm"))</td>
+                    <td>@item.ToAirport.Code (@item.ArrivalTime.ToString("HH:mm"))</td>
+
+                    <td>@Html.DisplayFor(modelItem => item.Aircraft.Model)</td>
+                    <td>@item.Price.ToString("C")</td>
+                    <td>
+                        <a asp-controller="Search" asp-action="Book" asp-route-flightId="@item.Id" class="btn btn-sm btn-success">
+                            Book Now
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <div class="alert alert-warning text-center">
+        <p><strong>Sorry!</strong> No flights were found matching your criteria.</p>
+        <a asp-action="Index" class="btn btn-secondary mt-3">Try a different search</a>
+    </div>
+}
+
+<div>
+    <a asp-action="Index">Back to Search</a>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

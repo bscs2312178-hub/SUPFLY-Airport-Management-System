@@ -1,0 +1,69 @@
+﻿@model IEnumerable<SUPFLY.Models.Booking>
+
+@{
+    // Title reflects this is the management view for all bookings
+    ViewData["Title"] = "Manage All Bookings";
+}
+
+<h1 class="text-primary">Manage All Bookings</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-success">Create New Booking</a>
+</p>
+<table class="table table-striped table-hover">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Flight)
+            </th>
+            <th>
+                Route
+            </th>
+            <th>
+                Passenger Name
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.BookingDate)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.SeatNumber)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.PricePaid)
+            </th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Flight.FlightNumber)
+                </td>
+                <td>
+                    @* This relies on the nested includes in the controller Index action *@
+                    @item.Flight?.FromAirport?.Code &rarr; @item.Flight?.ToAirport?.Code
+                </td>
+                <td>
+                    @* Displaying the Passenger's full name *@
+                    @item.Passenger?.FirstName @item.Passenger?.LastName
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.BookingDate)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.SeatNumber)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.PricePaid)
+                </td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-primary">Edit</a> |
+                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Details</a> |
+                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

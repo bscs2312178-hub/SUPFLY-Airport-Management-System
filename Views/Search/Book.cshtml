@@ -1,0 +1,78 @@
+﻿@model SUPFLY.Models.Flight
+
+@{
+    ViewData["Title"] = "Book Flight";
+    // Retrieve the list of booked seats from ViewData
+    var bookedSeats = ViewData["BookedSeats"] as List<string> ?? new List<string>();
+}
+
+<h2>Book Flight: @Model.FlightNumber</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4>Flight Details</h4>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-5">Route:</dt>
+                    <dd class="col-sm-7">@Model.FromAirport.Code &rarr; @Model.ToAirport.Code</dd>
+
+                    <dt class="col-sm-5">Departure:</dt>
+                    <dd class="col-sm-7">@Model.DepartureTime.ToString("dd MMM yyyy HH:mm")</dd>
+
+                    <dt class="col-sm-5">Aircraft:</dt>
+                    <dd class="col-sm-7">@Model.Aircraft.Model (@Model.Aircraft.Capacity Seats)</dd>
+
+                    <dt class="col-sm-5">Price:</dt>
+                    <dd class="col-sm-7 text-success font-weight-bold display-4">@Model.Price.ToString("C")</dd>
+                </dl>
+            </div>
+        </div>
+
+        @* ========================================================= *@
+        @* NEW: Display Booked Seats *@
+        @* ========================================================= *@
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5>Reserved Seats</h5>
+            </div>
+            <div class="card-body">
+                @if (bookedSeats.Any())
+                {
+                    <p>The following seats are already taken for this flight:</p>
+                    <span class="badge badge-danger p-2">@string.Join("</span> <span class='badge badge-danger p-2'>", bookedSeats)</span>
+                }
+                else
+                {
+                    <p class="text-success">No seats have been booked yet. All seats are available!</p>
+                }
+            </div>
+        </div>
+        @* ========================================================= *@
+    </div>
+
+    <div class="col-md-6">
+        <form asp-action="Book" asp-route-flightId="@Model.Id" method="post" class="card p-4 shadow-sm">
+            <h4 class="mb-3">Confirm Seat and Payment</h4>
+
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label for="SeatNumber" class="control-label">Enter Desired Seat Number</label>
+                <input name="SeatNumber" class="form-control" required />
+                @* ✅ FIX: Use Html.ValidationMessage to explicitly pull the error for the "SeatNumber" key *@
+                @Html.ValidationMessage("SeatNumber", new { @class = "text-danger" })
+            </div>
+
+            <div class="alert alert-info mt-3">
+                <p>By clicking "Confirm and Pay," you agree to pay **@Model.Price.ToString("C")** immediately.</p>
+                <p>Ensure your seat number is **not** listed in the Reserved Seats section.</p>
+            </div>
+
+            <button type="submit" class="btn btn-success btn-lg mt-3">
+                <i class="fas fa-credit-card"></i> Confirm and Pay
+            </button>
+        </form>
+    </div>
+</div>
