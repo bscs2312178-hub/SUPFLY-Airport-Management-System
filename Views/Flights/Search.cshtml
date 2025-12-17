@@ -1,0 +1,132 @@
+﻿@model SUPFLY.ViewModels.FlightSearchViewModel
+@using SUPFLY.Models
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "Search Flights";
+    var searchResults = ViewData["SearchResults"] as List<Flight>;
+}
+
+<div class="container py-4">
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold text-primary"><i class="bi bi-search"></i> Search Flights</h1>
+        <p class="lead text-muted">Book your next adventure with SUPFLY.</p>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <form asp-action="Search" method="post" class="card shadow border-0 p-4 bg-light">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="row g-3">
+                    @* --- Flying From --- *@
+                    <div class="col-md-4">
+                        <label asp-for="FromCode" class="form-label fw-bold">Flying From</label>
+                        <select asp-for="FromCode" class="form-select" asp-items="ViewBag.Airports">
+                            <option value="">-- Select Origin --</option>
+                        </select>
+                        <span asp-validation-for="FromCode" class="text-danger small"></span>
+                    </div>
+
+                    @* --- Flying To --- *@
+                    <div class="col-md-4">
+                        <label asp-for="ToCode" class="form-label fw-bold">Flying To</label>
+                        <select asp-for="ToCode" class="form-select" asp-items="ViewBag.Airports">
+                            <option value="">-- Select Destination --</option>
+                        </select>
+                        <span asp-validation-for="ToCode" class="text-danger small"></span>
+                    </div>
+
+                    @* --- Date --- *@
+                    <div class="col-md-4">
+                        <label asp-for="DepartureDate" class="form-label fw-bold">Departure Date</label>
+                        <input asp-for="DepartureDate" class="form-control" type="date" min="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                        <span asp-validation-for="DepartureDate" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg px-5 shadow-sm">
+                        <i class="bi bi-airplane-engines"></i> Search Flights
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @* --- Display Search Results --- *@
+    @if (searchResults != null)
+    {
+        <div class="mt-5">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h3 mb-0">Available Flights</h2>
+                <span class="badge bg-primary rounded-pill">@searchResults.Count() Results Found</span>
+            </div>
+            <hr />
+
+            @if (searchResults.Any())
+            {
+                <div class="table-responsive shadow-sm rounded">
+                    <table class="table table-hover align-middle bg-white">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Flight #</th>
+                                <th>Route</th>
+                                <th>Schedule</th>
+                                <th>Aircraft</th>
+                                <th>Price</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in searchResults)
+                            {
+                                <tr>
+                                    <td class="fw-bold">@item.FlightNumber</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <span class="fw-bold text-primary">@item.FromAirport?.Code</span>
+                                            <i class="bi bi-arrow-right mx-2 text-muted"></i>
+                                            <span class="fw-bold text-primary">@item.ToAirport?.Code</span>
+                                        </div>
+                                        <small class="text-muted">@item.FromAirport?.City to @item.ToAirport?.City</small>
+                                    </td>
+                                    <td>
+                                        <div><i class="bi bi-calendar3"></i> @item.DepartureTime.ToString("dd MMM yyyy")</div>
+                                        <small class="text-muted">@item.DepartureTime.ToString("HH:mm") - @item.ArrivalTime.ToString("HH:mm")</small>
+                                    </td>
+                                    <td><span class="badge bg-light text-dark border">@item.Aircraft?.Model</span></td>
+                                    <td class="h5 mb-0 text-success fw-bold">
+                                        @item.Price.ToString("C", CultureInfo.CreateSpecificCulture("en-US"))
+                                    </td>
+                                    <td class="text-end">
+                                        <a asp-controller="Bookings"
+                                           asp-action="Create"
+                                           asp-route-flightId="@item.Id"
+                                           class="btn btn-success btn-sm px-4 rounded-pill shadow-sm">
+                                            Book Now
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5 border rounded bg-white shadow-sm">
+                    <i class="bi bi-excursion text-warning display-1"></i>
+                    <h3 class="mt-3">No Flights Found</h3>
+                    <p class="text-muted">We couldn't find any flights for this specific route on this date. Try searching for a different day!</p>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

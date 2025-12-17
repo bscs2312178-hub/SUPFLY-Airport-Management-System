@@ -1,48 +1,103 @@
 ﻿@model SUPFLY.Models.Booking
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "E-Ticket Details";
 }
 
-<h1>Details</h1>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+        <h1><i class="bi bi-ticket-perforated"></i> Your E-Ticket</h1>
+        <div>
+            <button onclick="window.print()" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-printer"></i> Print Ticket
+            </button>
+            <a asp-action="MyBookings" class="btn btn-primary">Back to My Bookings</a>
+        </div>
+    </div>
 
-<div>
-    <h4>Booking</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Flight)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Flight.FlightNumber)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Passenger)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Passenger.Email)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.BookingDate)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.BookingDate)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.SeatNumber)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.SeatNumber)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.PricePaid)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.PricePaid)
-        </dd>
-    </dl>
+    <div class="card shadow-lg border-0">
+        <div class="card-header bg-dark text-white p-4">
+            <div class="row align-items-center">
+                <div class="col-sm-6">
+                    <h2 class="mb-0">SUPFLY</h2>
+                    <small class="text-uppercase tracking-widest">Boarding Pass</small>
+                </div>
+                <div class="col-sm-6 text-sm-end">
+                    <h4 class="mb-0">Flight #@Model.Flight?.FlightNumber</h4>
+                    <span class="badge bg-success">@Model.Status</span>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="bg-light p-4 border-bottom d-flex justify-content-around align-items-center text-center">
+                <div>
+                    <h1 class="display-4 fw-bold mb-0">@Model.Flight?.FromAirport?.Code</h1>
+                    <p class="text-muted mb-0">@Model.Flight?.FromAirport?.City</p>
+                </div>
+                <div class="text-primary">
+                    <i class="bi bi-airplane fs-1"></i>
+                </div>
+                <div>
+                    <h1 class="display-4 fw-bold mb-0">@Model.Flight?.ToAirport?.Code</h1>
+                    <p class="text-muted mb-0">@Model.Flight?.ToAirport?.City</p>
+                </div>
+            </div>
+
+            <div class="p-4">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <h6 class="text-muted text-uppercase small">Passenger</h6>
+                        <p class="h5">@Model.Passenger?.FirstName @Model.Passenger?.LastName</p>
+                        <p class="text-muted">@Model.Passenger?.Email</p>
+                    </div>
+
+                    <div class="col-md-3 col-6 text-center border-start border-end">
+                        <h6 class="text-muted text-uppercase small">Seat</h6>
+                        <p class="h3 fw-bold text-primary">@(Model.SeatNumber ?? "N/A")</p>
+                    </div>
+
+                    <div class="col-md-3 col-6 text-center">
+                        <h6 class="text-muted text-uppercase small">Price Paid</h6>
+                        <p class="h5 text-success fw-bold">@Model.PricePaid.ToString("C")</p>
+                    </div>
+
+                    <hr />
+
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="bi bi-calendar-check fs-4 me-3 text-muted"></i>
+                            <div>
+                                <h6 class="mb-0">Departure</h6>
+                                <strong>@Model.Flight?.DepartureTime.ToString("dd MMM yyyy, HH:mm")</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-3">
+                            <i class="bi bi-clock-history fs-4 me-3 text-muted"></i>
+                            <div>
+                                <h6 class="mb-0">Arrival (Estimated)</h6>
+                                <strong>@Model.Flight?.ArrivalTime.ToString("dd MMM yyyy, HH:mm")</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer bg-white p-4 text-center border-top-0">
+            <div class="text-muted small mb-2">Booking ID: @Model.Id | Booked on @Model.BookingDate.ToString("f")</div>
+            <div class="bg-light p-3 rounded d-inline-block">
+                @* Placeholder for a QR Code or Barcode *@
+                <i class="bi bi-qr-code fs-1"></i>
+                <div class="small mt-1 text-uppercase fw-bold">Scan for Boarding</div>
+            </div>
+        </div>
+    </div>
 </div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
-</div>
+
+<style>
+    @@media print {
+        .no-print { display: none !important; }
+        .card { border: 1px solid #ddd !important; shadow: none !important; }
+    }
+</style>

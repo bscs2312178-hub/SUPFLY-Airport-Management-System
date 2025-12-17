@@ -1,8 +1,66 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Welcome to SUPFLY";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="hero-section text-white d-flex align-items-center mb-5" style="
+    background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)),
+    url('https://images.unsplash.com/photo-1436491865332-7a61a109c0f3?auto=format&fit=crop&w=1600&q=80');
+    background-size: cover;
+    background-position: center;
+    height: 70vh;
+    border-radius: 15px;">
+
+    <div class="container text-center">
+        <h1 class="display-3 fw-bold mb-3">Your Journey Starts Here</h1>
+        <p class="lead mb-4">Experience seamless flight bookings and world-class travel management with SUPFLY.</p>
+        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+            <a asp-controller="Flights" asp-action="Search" class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow">
+                <i class="bi bi-search"></i> Find a Flight
+            </a>
+            @if (!User.Identity.IsAuthenticated)
+            {
+                <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-outline-light btn-lg px-5 py-3 fw-bold">
+                    Join Now
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <div class="row text-center g-4">
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm p-4">
+                <div class="display-4 text-primary mb-3"><i class="bi bi-shield-check"></i></div>
+                <h3 class="h5 fw-bold">Secure Booking</h3>
+                <p class="text-muted">Your data and seats are protected by our advanced unique reservation system.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm p-4">
+                <div class="display-4 text-primary mb-3"><i class="bi bi-geo-alt"></i></div>
+                <h3 class="h5 fw-bold">Global Reach</h3>
+                <p class="text-muted">Connecting you to major airports and destinations around the globe.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm p-4">
+                <div class="display-4 text-primary mb-3"><i class="bi bi-ticket-perforated"></i></div>
+                <h3 class="h5 fw-bold">Easy E-Tickets</h3>
+                <p class="text-muted">Access your digital tickets and manage your preferences 24/7 in your dashboard.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bg-light rounded-4 p-5 mb-5 border">
+    <div class="row align-items-center">
+        <div class="col-lg-6">
+            <h2 class="fw-bold">Fly Smarter, Not Harder.</h2>
+            <p>From choosing your favorite seat to tracking your flight status, SUPFLY gives you full control over your travel experience.</p>
+        </div>
+        <div class="col-lg-6 text-center">
+            <img src="https://images.unsplash.com/photo-1569154941061-e231b4725ef1?auto=format&fit=crop&w=500&q=80" class="img-fluid rounded-3 shadow" alt="Flight Image">
+        </div>
+    </div>
 </div>

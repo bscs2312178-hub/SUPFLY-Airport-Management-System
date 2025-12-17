@@ -1,12 +1,10 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using SUPFLY.Areas.Identity.Data; // <-- Using your provided namespace
+using SUPFLY.Areas.Identity.Data;
 using SUPFLY.Models;
-using System.Collections;
 
 namespace SUPFLY.Data
 {
-    // The correct inheritance for Identity integration
     public class ApplicationDbContext : IdentityDbContext<SUPFLYUser>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
@@ -14,37 +12,43 @@ namespace SUPFLY.Data
         {
         }
 
-        // Your existing DbSet declarations for the Airline System
         public DbSet<Airport> Airports { get; set; }
         public DbSet<Aircraft> Aircrafts { get; set; }
         public DbSet<Flight> Flights { get; set; }
         public DbSet<Passenger> Passengers { get; set; }
         public DbSet<Booking> Bookings { get; set; }
-        public IEnumerable Aircraft { get; internal set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // IMPORTANT: This call MUST come first to configure the Identity tables
+            // Fix for the Decimal warning
+            modelBuilder.Entity<Booking>()
+                .Property(b => b.PricePaid)
+                .HasPrecision(18, 2); // 18 digits total, 2 after the decimal point
+
+            modelBuilder.Entity<Flight>()
+                .Property(f => f.Price)
+                .HasPrecision(18, 2);
+            // 1. ALWAYS call base first for Identity
             base.OnModelCreating(modelBuilder);
 
-            // ⚠️ FIX FOR MULTIPLE FOREIGN KEYS (YOU ALREADY HAD THIS! NICE JOB!)
-            // EF Core by default cannot determine which cascade path to use when you have 
-            // two foreign keys (FromAirportId and ToAirportId) pointing to the same table (Airport).
-            // We disable the automatic cascade delete behavior.
-
+            // 2. Fix for Multiple Foreign Keys (Airport Restriction)
             modelBuilder.Entity<Flight>()
                 .HasOne(f => f.FromAirport)
                 .WithMany()
                 .HasForeignKey(f => f.FromAirportId)
-                // This line prevents the potential database error 
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Flight>()
                 .HasOne(f => f.ToAirport)
                 .WithMany()
                 .HasForeignKey(f => f.ToAirportId)
-                // This line prevents the potential database error
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // 3. Unique Seat Constraint
+            // Prevents the same seat being booked twice on the same flight
+            modelBuilder.Entity<Booking>()
+        .HasIndex(b => new { b.FlightId, b.SeatNumber })
+        .IsUnique();
         }
     }
 }

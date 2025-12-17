@@ -1,51 +1,67 @@
 ﻿@model SUPFLY.Models.Booking
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Confirm Booking";
 }
 
-<h1>Create</h1>
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white text-center">
+                    <h3 class="mb-0">Complete Your Booking</h3>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Create">
+                        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-<h4>Booking</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="FlightId" class="control-label"></label>
-                <select asp-for="FlightId" class ="form-control" asp-items="ViewBag.FlightId"></select>
+                        <div class="form-group mb-3">
+                            <label asp-for="FlightId" class="control-label fw-bold">Selected Flight</label>
+                            <select asp-for="FlightId" class="form-control" asp-items="ViewBag.FlightId">
+                                <option value="">-- Select Flight --</option>
+                            </select>
+                            <span asp-validation-for="FlightId" class="text-danger"></span>
+                        </div>
+
+                        <input type="hidden" asp-for="PassengerId" value="@ViewBag.PassengerId" />
+
+                        <div class="alert alert-info shadow-sm">
+                            <i class="bi bi-person-check"></i> Booking for: <strong>@User.Identity.Name</strong>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label asp-for="SeatNumber" class="control-label fw-bold">
+                                <i class="bi bi-grid-3x3-gap"></i> Seat Number
+                            </label>
+                            <input asp-for="SeatNumber" class="form-control form-control-lg" placeholder="e.g., 12A, 14C" required />
+                            <div class="d-flex justify-content-between">
+                                <small class="text-muted">Enter a row and letter (e.g., 1A is Window).</small>
+                                @if (ViewBag.TakenSeats != null)
+                                {
+                                    <small class="text-danger fw-bold">Taken: @string.Join(", ", ViewBag.TakenSeats)</small>
+                                }
+                            </div>
+                            <span asp-validation-for="SeatNumber" class="text-danger"></span>
+                        </div>
+
+                        <input type="hidden" asp-for="BookingDate" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss")" />
+                        <input type="hidden" asp-for="Status" value="Confirmed" />
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-check-circle"></i> Confirm and Book
+                            </button>
+                            <a asp-controller="Flights" asp-action="Search" class="btn btn-link text-muted text-center">Cancel</a>
+                        </div>
+                    </form>
+                </div>
             </div>
-            <div class="form-group">
-                <label asp-for="PassengerId" class="control-label"></label>
-                <select asp-for="PassengerId" class ="form-control" asp-items="ViewBag.PassengerId"></select>
-            </div>
-            <div class="form-group">
-                <label asp-for="BookingDate" class="control-label"></label>
-                <input asp-for="BookingDate" class="form-control" />
-                <span asp-validation-for="BookingDate" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="SeatNumber" class="control-label"></label>
-                <input asp-for="SeatNumber" class="form-control" />
-                <span asp-validation-for="SeatNumber" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="PricePaid" class="control-label"></label>
-                <input asp-for="PricePaid" class="form-control" />
-                <span asp-validation-for="PricePaid" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
-
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }
