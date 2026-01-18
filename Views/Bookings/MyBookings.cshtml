@@ -4,66 +4,143 @@
     ViewData["Title"] = "My Bookings";
 }
 
-<h2 class="text-center mb-5">Your Confirmed Reservations</h2>
+<div class="container py-4">
+    @* --- ALERT MESSAGES --- *@
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
 
-@if (ViewBag.NoPassengerProfile != null && (bool)ViewBag.NoPassengerProfile)
-{
-    <div class="alert alert-danger text-center shadow-sm" role="alert">
-        <h4><i class="bi bi-person-exclamation"></i> Profile Required</h4>
-        <p>Your user account is not linked to a passenger profile. Please ensure your account has a linked passenger entry in the database.</p>
-        @* Link to a Passenger creation page if you have one *@
-        <a asp-controller="Passengers" asp-action="Create" class="btn btn-danger btn-sm">Create Profile</a>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-6 fw-bold"><i class="bi bi-journal-bookmark-fill text-primary"></i> My Bookings</h1>
+        <a asp-controller="Flights" asp-action="Search" class="btn btn-outline-primary rounded-pill">
+            <i class="bi bi-plus-lg"></i> New Booking
+        </a>
     </div>
-}
 
-@if (Model != null && Model.Any())
-{
-    <div class="row">
-        @foreach (var item in Model)
-        {
-            <div class="col-md-6 mb-4">
-                <div class="card shadow-sm h-100 border-primary">
-                    <div class="card-header bg-primary text-white d-flex justify-content-between">
-                        <h5 class="mb-0">Booking ID: #@item.Id</h5>
-                        <small>@item.Status</small>
-                    </div>
-                    <div class="card-body">
-                        <h4 class="card-title text-center">@item.Flight?.FromAirport?.Code <i class="bi bi-arrow-right"></i> @item.Flight?.ToAirport?.Code</h4>
-                        <p class="card-text text-muted text-center small">@item.Flight?.FromAirport?.City to @item.Flight?.ToAirport?.City</p>
-                        <hr />
-                        <dl class="row">
-                            <dt class="col-sm-5">Flight Number:</dt>
-                            <dd class="col-sm-7">@item.Flight?.FlightNumber</dd>
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-ticket-detailed display-1 text-muted"></i>
+            <p class="lead mt-3">You haven't booked any flights yet.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive shadow-sm rounded">
+            <table class="table table-hover align-middle bg-white mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Trip Type</th>
+                        <th>Route Details</th>
+                        <th>Travel Date</th>
+                        <th>Total Price</th>
+                        <th>Live Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                @if (item.IsRoundTrip)
+                                {
+                                    <span class="badge bg-primary"><i class="bi bi-arrow-left-right"></i> Round-Trip</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary"><i class="bi bi-arrow-right"></i> One-Way</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="fw-bold">
+                                    @item.Flight?.FromAirport?.Code <i class="bi bi-arrow-right text-muted"></i> @item.Flight?.ToAirport?.Code
+                                </div>
 
-                            <dt class="col-sm-5">Departure Time:</dt>
-                            <dd class="col-sm-7">@item.Flight?.DepartureTime.ToString("dd MMM yyyy HH:mm")</dd>
+                                @if (item.IsRoundTrip && item.ReturnFlight != null)
+                                {
+                                    <div class="small text-info">
+                                        <i class="bi bi-arrow-return-left"></i>
+                                        Return: @item.ReturnFlight?.FromAirport?.Code to @item.ReturnFlight?.ToAirport?.Code
+                                    </div>
+                                }
+                            </td>
+                            <td>
+                                <div>@item.Flight?.DepartureTime.ToString("dd MMM yyyy")</div>
+                                @if (item.IsRoundTrip && item.ReturnFlight != null)
+                                {
+                                    <small class="text-muted">Ret: @item.ReturnFlight.DepartureTime.ToString("dd MMM yyyy")</small>
+                                }
+                            </td>
+                            <td class="fw-bold text-success">
+                                @item.PricePaid.ToString("C")
+                            </td>
+                            <td>
+                                @switch (item.Status)
+                                {
+                                    case "Confirmed":
+                                        <span class="badge rounded-pill bg-primary text-white">
+                                            <i class="bi bi-check-circle"></i> Confirmed
+                                        </span>
+                                        break;
+                                    case "Checked-In":
+                                        <span class="badge rounded-pill bg-info text-dark">
+                                            <i class="bi bi-person-badge"></i> Checked-In
+                                        </span>
+                                        break;
+                                    case "Boarded":
+                                        <span class="badge rounded-pill bg-warning text-dark">
+                                            <i class="bi bi-airplane-engines"></i> Boarded
+                                        </span>
+                                        break;
+                                    case "Completed":
+                                        <span class="badge rounded-pill bg-success">
+                                            <i class="bi bi-flag-fill"></i> Arrived
+                                        </span>
+                                        break;
+                                    case "Cancelled":
+                                        <span class="badge rounded-pill bg-danger">
+                                            <i class="bi bi-x-octagon"></i> Cancelled
+                                        </span>
+                                        break;
+                                    default:
+                                        <span class="badge rounded-pill bg-secondary">@item.Status</span>
+                                        break;
+                                }
+                            </td>
+                            <td class="text-center">
+                                <div class="d-flex justify-content-center gap-2">
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-primary px-3 rounded-pill">
+                                        <i class="bi bi-eye"></i> View Ticket
+                                    </a>
 
-                            <dt class="col-sm-5">Seat Assigned:</dt>
-                            <dd class="col-sm-7"><strong>@(string.IsNullOrEmpty(item.SeatNumber) ? "Pending" : item.SeatNumber)</strong></dd>
-
-                            <dt class="col-sm-5">Booked On:</dt>
-                            <dd class="col-sm-7">@item.BookingDate.ToString("dd MMM yyyy")</dd>
-
-                            <dt class="col-sm-5">Price Paid:</dt>
-                            <dd class="col-sm-7 text-success fw-bold">@item.PricePaid.ToString("C")</dd>
-                        </dl>
-                        
-                        <div class="d-grid mt-3">
-                            <a asp-controller="Bookings" asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-primary btn-sm">View E-Ticket Details</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        }
-    </div>
-}
-else if (Model != null)
-{
-    <div class="alert alert-info text-center shadow-sm" role="alert">
-        <h4 class="alert-heading">No Bookings Found!</h4>
-        <p>You have no reservations currently associated with this account. Use the search function to find a flight.</p>
-        <hr>
-        @* FIXED LINK BELOW *@
-        <a asp-controller="Flights" asp-action="Search" class="btn btn-info">Start Searching Flights</a>
-    </div>
-}
+                                    @* --- CONDITIONAL CANCEL BUTTON --- *@
+                                    @if (item.Status == "Confirmed")
+                                    {
+                                        <form asp-action="Cancel" asp-route-id="@item.Id" method="post"
+                                              onsubmit="return confirm('Are you sure you want to cancel this booking?');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger px-3 rounded-pill">
+                                                <i class="bi bi-x-circle"></i> Cancel
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

@@ -92,86 +92,74 @@ namespace SUPFLY.Controllers
         }
 
         // GET: Bookings/Create
-        public async Task<IActionResult> Create(int? flightId)
+        public async Task<IActionResult> Create(int flightId, int? returnFlightId, bool isRoundTrip)
         {
-            var userId = _userManager.GetUserId(User);
+            // 1. Find the Outbound Flight
+            var outboundFlight = await _context.Flights
+                .Include(f => f.FromAirport)
+                .Include(f => f.ToAirport)
+                .FirstOrDefaultAsync(f => f.Id == flightId);
+
+            if (outboundFlight == null) return NotFound();
+
+            // 2. Find the Return Flight
+            Flight? returnFlight = null;
+            if (isRoundTrip && returnFlightId.HasValue)
+            {
+                returnFlight = await _context.Flights
+                    .Include(f => f.FromAirport)
+                    .Include(f => f.ToAirport)
+                    .FirstOrDefaultAsync(f => f.Id == returnFlightId);
+            }
+
+            // --- STEP 2.5: FIND THE LOGGED-IN PASSENGER ---
+            // This part is crucial to fix the Foreign Key error!
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var passenger = await _context.Passengers.FirstOrDefaultAsync(p => p.UserId == userId);
 
             if (passenger == null)
             {
-                var user = await _userManager.GetUserAsync(User);
-                passenger = new Passenger
-                {
-                    UserId = userId,
-                    FirstName = "New",
-                    LastName = user?.Email ?? "Passenger",
-                    Email = user?.Email ?? ""
-                };
-                _context.Passengers.Add(passenger);
-                await _context.SaveChangesAsync();
+                // If the user hasn't created a passenger profile yet, 
+                // they shouldn't be able to book.
+                return RedirectToAction("Create", "Passengers");
             }
 
-            ViewData["FlightId"] = new SelectList(_context.Flights, "Id", "FlightNumber", flightId);
-            ViewData["PassengerId"] = passenger.Id;
+            // 3. Create the Booking object with the PassengerId PRE-FILLED
+            var booking = new Booking
+            {
+                FlightId = flightId,
+                ReturnFlightId = returnFlightId,
+                IsRoundTrip = isRoundTrip,
+                PassengerId = passenger.Id, // <--- This connects the booking to YOU
+                PricePaid = outboundFlight.Price + (returnFlight?.Price ?? 0),
+                Status = "Confirmed"
+            };
 
-            ViewBag.TakenSeats = await _context.Bookings
-                .Where(b => b.FlightId == flightId && b.Status != "Cancelled")
-                .Select(b => b.SeatNumber)
-                .ToListAsync();
+            // 4. Send details to the View
+            ViewBag.OutboundFlight = outboundFlight;
+            ViewBag.ReturnFlight = returnFlight;
+            ViewBag.PassengerId = passenger.Id; // Sent for the hidden field in the form
 
-            return View();
+            return View(booking);
         }
 
         // POST: Bookings/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("FlightId,PassengerId,SeatNumber")] Booking booking)
+        public async Task<IActionResult> Create([Bind("Id,FlightId,PassengerId,PricePaid,IsRoundTrip,ReturnFlightId,SeatNumber,ReturnSeatNumber,Status")] Booking booking)
         {
-            // 1. Tell the controller to ignore validation for fields we set manually
-            ModelState.Remove("Status");
-            ModelState.Remove("PricePaid");
-            ModelState.Remove("BookingDate");
-            ModelState.Remove("Passenger");
-            ModelState.Remove("Flight");
-
-            var flight = await _context.Flights.FindAsync(booking.FlightId);
-
-            if (flight != null)
-            {
-                // Check if seat is already taken
-                bool isSeatTaken = await _context.Bookings
-                    .AnyAsync(b => b.FlightId == booking.FlightId &&
-                                   b.SeatNumber == booking.SeatNumber &&
-                                   b.Status != "Cancelled");
-
-                if (isSeatTaken)
-                {
-                    ModelState.AddModelError("SeatNumber", $"Seat {booking.SeatNumber} is already reserved. Please choose another.");
-                }
-
-                // Set values that aren't in the form
-                booking.PricePaid = flight.Price;
-                booking.Status = "Confirmed";
-                booking.BookingDate = DateTime.Now;
-            }
-
+            // If the page reloads, it's because this 'ModelState.IsValid' is FALSE
             if (ModelState.IsValid)
             {
+                booking.BookingDate = DateTime.Now;
                 _context.Add(booking);
                 await _context.SaveChangesAsync();
-                // Redirecting to MyBookings after successful save
-                return RedirectToAction(nameof(MyBookings));
+                return RedirectToAction(nameof(Details), new { id = booking.Id });
             }
 
-            // If we are here, something went wrong (Validation failed)
-            ViewData["FlightId"] = new SelectList(_context.Flights, "Id", "FlightNumber", booking.FlightId);
-
-            // Re-fetch taken seats so the UI stays consistent
-            ViewBag.TakenSeats = await _context.Bookings
-                .Where(b => b.FlightId == booking.FlightId && b.Status != "Cancelled")
-                .Select(b => b.SeatNumber)
-                .ToListAsync();
-
+            // If we are here, something is invalid. 
+            // Let's reload the view data so the page doesn't break.
+            ViewBag.PassengerId = new SelectList(_context.Passengers, "Id", "Email", booking.PassengerId);
             return View(booking);
         }
 
@@ -255,11 +243,82 @@ namespace SUPFLY.Controllers
             var userBookings = await _context.Bookings
                 .Include(b => b.Flight).ThenInclude(f => f.FromAirport)
                 .Include(b => b.Flight).ThenInclude(f => f.ToAirport)
+                // --- ADD THESE TWO LINES BELOW ---
+                .Include(b => b.ReturnFlight).ThenInclude(f => f.FromAirport)
+                .Include(b => b.ReturnFlight).ThenInclude(f => f.ToAirport)
+                // ----------------------------------
                 .Where(b => b.PassengerId == passenger.Id)
                 .OrderByDescending(b => b.BookingDate)
                 .ToListAsync();
 
             return View(userBookings);
+        }
+        private List<SelectListItem> GetStatusOptions(string currentStatus)
+        {
+            var statuses = new List<string> { "Confirmed", "Checked-In", "Boarded", "Cancelled", "Completed" };
+            return statuses.Select(s => new SelectListItem
+            {
+                Value = s,
+                Text = s,
+                Selected = s == currentStatus
+            }).ToList();
+        }
+        // GET: Bookings/Manage
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Manage()
+        {
+            var allBookings = await _context.Bookings
+                .Include(b => b.Flight).ThenInclude(f => f.FromAirport)
+                .Include(b => b.Flight).ThenInclude(f => f.ToAirport)
+                .Include(b => b.Passenger)
+                .OrderByDescending(b => b.BookingDate)
+                .ToListAsync();
+
+            // --- CALCULATE REVENUE STATS ---
+            ViewBag.TotalRevenue = allBookings.Where(b => b.Status != "Cancelled").Sum(b => b.PricePaid);
+            ViewBag.TotalBookings = allBookings.Count;
+            ViewBag.ActiveBookings = allBookings.Count(b => b.Status == "Confirmed" || b.Status == "Checked-In" || b.Status == "Boarded");
+            ViewBag.CancelledBookings = allBookings.Count(b => b.Status == "Cancelled");
+
+            return View(allBookings);
+        }
+
+        // POST: Bookings/UpdateStatus
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateStatus(int id, string newStatus)
+        {
+            var booking = await _context.Bookings.FindAsync(id);
+            if (booking == null) return NotFound();
+
+            booking.Status = newStatus;
+            await _context.SaveChangesAsync();
+
+            // Redirect back to the management page
+            return RedirectToAction(nameof(Manage));
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Cancel(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var booking = await _context.Bookings
+                .Include(b => b.Passenger)
+                .FirstOrDefaultAsync(b => b.Id == id);
+
+            // Security check: Only the owner can cancel, and only if it's just 'Confirmed'
+            if (booking != null && booking.Passenger?.UserId == userId && booking.Status == "Confirmed")
+            {
+                booking.Status = "Cancelled";
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Your booking has been cancelled successfully.";
+            }
+            else
+            {
+                TempData["Error"] = "This booking cannot be cancelled at this stage.";
+            }
+
+            return RedirectToAction(nameof(MyBookings));
         }
 
         private bool BookingExists(int id) => _context.Bookings.Any(e => e.Id == id);

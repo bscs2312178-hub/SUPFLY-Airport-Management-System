@@ -1,12 +1,14 @@
 ﻿@model SUPFLY.Models.Booking
+@using System.Globalization
 
 @{
     ViewData["Title"] = "E-Ticket Details";
 }
 
-<div class="container mt-4">
+<div class="container mt-4 mb-5">
+    @* --- TOP BUTTONS --- *@
     <div class="d-flex justify-content-between align-items-center mb-4 no-print">
-        <h1><i class="bi bi-ticket-perforated"></i> Your E-Ticket</h1>
+        <h1 class="h3"><i class="bi bi-ticket-perforated"></i> Your E-Ticket</h1>
         <div>
             <button onclick="window.print()" class="btn btn-outline-secondary me-2">
                 <i class="bi bi-printer"></i> Print Ticket
@@ -16,78 +18,99 @@
     </div>
 
     <div class="card shadow-lg border-0">
+        @* --- HEADER --- *@
         <div class="card-header bg-dark text-white p-4">
             <div class="row align-items-center">
                 <div class="col-sm-6">
-                    <h2 class="mb-0">SUPFLY</h2>
-                    <small class="text-uppercase tracking-widest">Boarding Pass</small>
+                    <h2 class="mb-0 fw-bold">SUPFLY</h2>
+                    <span class="badge @(Model.IsRoundTrip ? "bg-primary" : "bg-secondary") text-uppercase">
+                        <i class="bi @(Model.IsRoundTrip ? "bi-arrow-left-right" : "bi-arrow-right")"></i>
+                        @(Model.IsRoundTrip ? "Round-Trip Ticket" : "One-Way Ticket")
+                    </span>
                 </div>
                 <div class="col-sm-6 text-sm-end">
-                    <h4 class="mb-0">Flight #@Model.Flight?.FlightNumber</h4>
-                    <span class="badge bg-success">@Model.Status</span>
+                    <p class="mb-0 small opacity-75">Booking Status</p>
+                    <span class="badge bg-success fs-6">@Model.Status</span>
                 </div>
             </div>
         </div>
+
         <div class="card-body p-0">
-            <div class="bg-light p-4 border-bottom d-flex justify-content-around align-items-center text-center">
-                <div>
-                    <h1 class="display-4 fw-bold mb-0">@Model.Flight?.FromAirport?.Code</h1>
-                    <p class="text-muted mb-0">@Model.Flight?.FromAirport?.City</p>
+            @* --- OUTBOUND LEG --- *@
+            <div class="p-4 border-bottom">
+                <h5 class="text-primary mb-3"><i class="bi bi-airplane-fill"></i> Outbound Flight: #@Model.Flight?.FlightNumber</h5>
+                <div class="bg-light p-3 rounded d-flex justify-content-around align-items-center text-center">
+                    <div>
+                        <h2 class="fw-bold mb-0">@Model.Flight?.FromAirport?.Code</h2>
+                        <p class="text-muted small">@Model.Flight?.FromAirport?.City</p>
+                    </div>
+                    <div class="text-muted"><i class="bi bi-arrow-right fs-3"></i></div>
+                    <div>
+                        <h2 class="fw-bold mb-0">@Model.Flight?.ToAirport?.Code</h2>
+                        <p class="text-muted small">@Model.Flight?.ToAirport?.City</p>
+                    </div>
                 </div>
-                <div class="text-primary">
-                    <i class="bi bi-airplane fs-1"></i>
-                </div>
-                <div>
-                    <h1 class="display-4 fw-bold mb-0">@Model.Flight?.ToAirport?.Code</h1>
-                    <p class="text-muted mb-0">@Model.Flight?.ToAirport?.City</p>
+                <div class="row mt-3 text-center">
+                    <div class="col-6 border-end">
+                        <p class="mb-0 text-muted small">Departure</p>
+                        <strong>@Model.Flight?.DepartureTime.ToString("dd MMM yyyy, HH:mm")</strong>
+                    </div>
+                    <div class="col-6">
+                        <p class="mb-0 text-muted small">Seat</p>
+                        <strong class="text-primary">@(Model.SeatNumber ?? "N/A")</strong>
+                    </div>
                 </div>
             </div>
 
+            @* --- RETURN LEG (Only shows if Round-Trip) --- *@
+            @if (Model.IsRoundTrip && Model.ReturnFlight != null)
+            {
+                <div class="p-4 border-bottom bg-white">
+                    <h5 class="text-info mb-3"><i class="bi bi-airplane-fill" style="transform: rotate(225deg); display:inline-block;"></i> Return Flight: #@Model.ReturnFlight?.FlightNumber</h5>
+                    <div class="bg-light p-3 rounded d-flex justify-content-around align-items-center text-center border-info border-start border-4">
+                        <div>
+                            <h2 class="fw-bold mb-0">@Model.ReturnFlight?.FromAirport?.Code</h2>
+                            <p class="text-muted small">@Model.ReturnFlight?.FromAirport?.City</p>
+                        </div>
+                        <div class="text-muted"><i class="bi bi-arrow-right fs-3"></i></div>
+                        <div>
+                            <h2 class="fw-bold mb-0">@Model.ReturnFlight?.ToAirport?.Code</h2>
+                            <p class="text-muted small">@Model.ReturnFlight?.ToAirport?.City</p>
+                        </div>
+                    </div>
+                    <div class="row mt-3 text-center">
+                        <div class="col-6 border-end">
+                            <p class="mb-0 text-muted small">Departure</p>
+                            <strong>@Model.ReturnFlight?.DepartureTime.ToString("dd MMM yyyy, HH:mm")</strong>
+                        </div>
+                        <div class="col-6">
+                            <p class="mb-0 text-muted small">Seat</p>
+                            <strong class="text-info">@(Model.ReturnSeatNumber ?? "N/A")</strong>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @* --- PASSENGER & PAYMENT INFO --- *@
             <div class="p-4">
-                <div class="row g-4">
+                <div class="row align-items-center">
                     <div class="col-md-6">
-                        <h6 class="text-muted text-uppercase small">Passenger</h6>
-                        <p class="h5">@Model.Passenger?.FirstName @Model.Passenger?.LastName</p>
-                        <p class="text-muted">@Model.Passenger?.Email</p>
+                        <h6 class="text-muted text-uppercase small">Passenger Information</h6>
+                        <p class="h5 mb-1">@Model.Passenger?.FirstName @Model.Passenger?.LastName</p>
+                        <p class="text-muted small">@Model.Passenger?.Email</p>
                     </div>
-
-                    <div class="col-md-3 col-6 text-center border-start border-end">
-                        <h6 class="text-muted text-uppercase small">Seat</h6>
-                        <p class="h3 fw-bold text-primary">@(Model.SeatNumber ?? "N/A")</p>
-                    </div>
-
-                    <div class="col-md-3 col-6 text-center">
-                        <h6 class="text-muted text-uppercase small">Price Paid</h6>
-                        <p class="h5 text-success fw-bold">@Model.PricePaid.ToString("C")</p>
-                    </div>
-
-                    <hr />
-
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-center mb-3">
-                            <i class="bi bi-calendar-check fs-4 me-3 text-muted"></i>
-                            <div>
-                                <h6 class="mb-0">Departure</h6>
-                                <strong>@Model.Flight?.DepartureTime.ToString("dd MMM yyyy, HH:mm")</strong>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="d-flex align-items-center mb-3">
-                            <i class="bi bi-clock-history fs-4 me-3 text-muted"></i>
-                            <div>
-                                <h6 class="mb-0">Arrival (Estimated)</h6>
-                                <strong>@Model.Flight?.ArrivalTime.ToString("dd MMM yyyy, HH:mm")</strong>
-                            </div>
-                        </div>
+                    <div class="col-md-6 text-md-end">
+                        <h6 class="text-muted text-uppercase small">Total Amount Paid</h6>
+                        <h3 class="text-success fw-bold">@Model.PricePaid.ToString("C", CultureInfo.CreateSpecificCulture("en-US"))</h3>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="card-footer bg-white p-4 text-center border-top-0">
-            <div class="text-muted small mb-2">Booking ID: @Model.Id | Booked on @Model.BookingDate.ToString("f")</div>
-            <div class="bg-light p-3 rounded d-inline-block">
-                @* Placeholder for a QR Code or Barcode *@
+
+        @* --- FOOTER / BARCODE --- *@
+        <div class="card-footer bg-light p-4 text-center">
+            <div class="text-muted small mb-3">Booking ID: @Model.Id | Booked on @Model.BookingDate.ToString("f")</div>
+            <div class="bg-white p-3 rounded shadow-sm d-inline-block">
                 <i class="bi bi-qr-code fs-1"></i>
                 <div class="small mt-1 text-uppercase fw-bold">Scan for Boarding</div>
             </div>
@@ -97,7 +120,16 @@
 
 <style>
     @@media print {
-        .no-print { display: none !important; }
-        .card { border: 1px solid #ddd !important; shadow: none !important; }
+        .no-print {
+            display: none !important;
+        }
+
+        .card {
+            border: 1px solid #000 !important;
+        }
+
+        body {
+            background-color: white !important;
+        }
     }
 </style>

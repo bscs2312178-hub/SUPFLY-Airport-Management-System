@@ -4,7 +4,6 @@
 
 @{
     ViewData["Title"] = "Search Flights";
-    var searchResults = ViewData["SearchResults"] as List<Flight>;
 }
 
 <div class="container py-4">
@@ -18,30 +17,51 @@
             <form asp-action="Search" method="post" class="card shadow border-0 p-4 bg-light">
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
+                @* --- TRIP TYPE TOGGLE --- *@
+                <div class="col-12 mb-4">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" asp-for="IsRoundTrip" value="false" id="oneWay" onclick="toggleReturnDate(false)">
+                        <label class="form-check-label fw-bold" for="oneWay">One-Way</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" asp-for="IsRoundTrip" value="true" id="roundTrip" onclick="toggleReturnDate(true)">
+                        <label class="form-check-label fw-bold" for="roundTrip">Round-Trip</label>
+                    </div>
+                </div>
+
                 <div class="row g-3">
                     @* --- Flying From --- *@
-                    <div class="col-md-4">
-                        <label asp-for="FromCode" class="form-label fw-bold">Flying From</label>
-                        <select asp-for="FromCode" class="form-select" asp-items="ViewBag.Airports">
-                            <option value="">-- Select Origin --</option>
+                    <div class="col-md-3">
+                        <label asp-for="FromAirportId" class="form-label fw-bold">Flying From</label>
+                        @* The 'value' must be the ID, and 'text' must be the City or Code *@
+                        <select asp-for="FromAirportId" class="form-select" asp-items="ViewBag.Airports">
+                            <option value="">-- Origin --</option>
                         </select>
-                        <span asp-validation-for="FromCode" class="text-danger small"></span>
+                        <span asp-validation-for="FromAirportId" class="text-danger small"></span>
                     </div>
 
                     @* --- Flying To --- *@
-                    <div class="col-md-4">
-                        <label asp-for="ToCode" class="form-label fw-bold">Flying To</label>
-                        <select asp-for="ToCode" class="form-select" asp-items="ViewBag.Airports">
-                            <option value="">-- Select Destination --</option>
+                    <div class="col-md-3">
+                        <label asp-for="ToAirportId" class="form-label fw-bold">Flying To</label>
+                        <select asp-for="ToAirportId" class="form-select"
+                                asp-items="@(new SelectList(ViewBag.Airports, "Value", "Text"))">
+                            <option value="">-- Destination --</option>
                         </select>
-                        <span asp-validation-for="ToCode" class="text-danger small"></span>
+                        <span asp-validation-for="ToAirportId" class="text-danger small"></span>
                     </div>
 
-                    @* --- Date --- *@
-                    <div class="col-md-4">
-                        <label asp-for="DepartureDate" class="form-label fw-bold">Departure Date</label>
+                    @* --- Departure Date --- *@
+                    <div class="col-md-3">
+                        <label asp-for="DepartureDate" class="form-label fw-bold">Departure</label>
                         <input asp-for="DepartureDate" class="form-control" type="date" min="@DateTime.Now.ToString("yyyy-MM-dd")" />
                         <span asp-validation-for="DepartureDate" class="text-danger small"></span>
+                    </div>
+
+                    @* --- Return Date --- *@
+                    <div class="col-md-3" id="returnDateContainer" style="display: none;">
+                        <label asp-for="ReturnDate" class="form-label fw-bold">Return</label>
+                        <input asp-for="ReturnDate" class="form-control" type="date" min="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                        <span asp-validation-for="ReturnDate" class="text-danger small"></span>
                     </div>
                 </div>
 
@@ -54,73 +74,107 @@
         </div>
     </div>
 
-    @* --- Display Search Results --- *@
-    @if (searchResults != null)
+    @* --- OUTBOUND FLIGHT RESULTS --- *@
+    @if (Model.OutboundFlights != null && Model.OutboundFlights.Any())
     {
         <div class="mt-5">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h2 class="h3 mb-0">Available Flights</h2>
-                <span class="badge bg-primary rounded-pill">@searchResults.Count() Results Found</span>
-            </div>
-            <hr />
-
-            @if (searchResults.Any())
-            {
-                <div class="table-responsive shadow-sm rounded">
-                    <table class="table table-hover align-middle bg-white">
-                        <thead class="table-dark">
+            <h3 class="mb-3 text-primary"><i class="bi bi-arrow-right-circle"></i> Outbound Flights</h3>
+            <div class="table-responsive shadow-sm rounded">
+                <table class="table table-hover align-middle bg-white">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Flight #</th>
+                            <th>Route</th>
+                            <th>Schedule</th>
+                            <th>Price</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.OutboundFlights)
+                        {
                             <tr>
-                                <th>Flight #</th>
-                                <th>Route</th>
-                                <th>Schedule</th>
-                                <th>Aircraft</th>
-                                <th>Price</th>
-                                <th></th>
+                                <td class="fw-bold">@item.FlightNumber</td>
+                                <td>
+                                    <span class="fw-bold text-primary">@item.FromAirport?.Code</span>
+                                    <i class="bi bi-arrow-right mx-1"></i>
+                                    <span class="fw-bold text-primary">@item.ToAirport?.Code</span>
+                                    <br /><small class="text-muted">@item.FromAirport?.City to @item.ToAirport?.City</small>
+                                </td>
+                                <td>
+                                    <div><i class="bi bi-calendar3"></i> @item.DepartureTime.ToString("dd MMM yyyy")</div>
+                                    <small class="text-muted">@item.DepartureTime.ToString("HH:mm") - @item.ArrivalTime.ToString("HH:mm")</small>
+                                </td>
+                                <td class="h5 text-success fw-bold">@item.Price.ToString("C", CultureInfo.CreateSpecificCulture("en-US"))</td>
+                                <td class="text-end">
+                                    @* Logic: If Round-Trip, don't allow selection here, wait for return selection *@
+                                    @if (Model.IsRoundTrip)
+                                    {
+                                        <span class="badge bg-light text-muted border p-2 small">
+                                            <i class="bi bi-arrow-down-circle"></i> Select return below
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <a asp-controller="Bookings" asp-action="Create" asp-route-flightId="@item.Id"
+                                           class="btn btn-success btn-sm px-4 rounded-pill shadow-sm">Select</a>
+                                    }
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in searchResults)
-                            {
-                                <tr>
-                                    <td class="fw-bold">@item.FlightNumber</td>
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            <span class="fw-bold text-primary">@item.FromAirport?.Code</span>
-                                            <i class="bi bi-arrow-right mx-2 text-muted"></i>
-                                            <span class="fw-bold text-primary">@item.ToAirport?.Code</span>
-                                        </div>
-                                        <small class="text-muted">@item.FromAirport?.City to @item.ToAirport?.City</small>
-                                    </td>
-                                    <td>
-                                        <div><i class="bi bi-calendar3"></i> @item.DepartureTime.ToString("dd MMM yyyy")</div>
-                                        <small class="text-muted">@item.DepartureTime.ToString("HH:mm") - @item.ArrivalTime.ToString("HH:mm")</small>
-                                    </td>
-                                    <td><span class="badge bg-light text-dark border">@item.Aircraft?.Model</span></td>
-                                    <td class="h5 mb-0 text-success fw-bold">
-                                        @item.Price.ToString("C", CultureInfo.CreateSpecificCulture("en-US"))
-                                    </td>
-                                    <td class="text-end">
-                                        <a asp-controller="Bookings"
-                                           asp-action="Create"
-                                           asp-route-flightId="@item.Id"
-                                           class="btn btn-success btn-sm px-4 rounded-pill shadow-sm">
-                                            Book Now
-                                        </a>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-            else
-            {
-                <div class="text-center py-5 border rounded bg-white shadow-sm">
-                    <i class="bi bi-excursion text-warning display-1"></i>
-                    <h3 class="mt-3">No Flights Found</h3>
-                    <p class="text-muted">We couldn't find any flights for this specific route on this date. Try searching for a different day!</p>
-                </div>
-            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    @* --- RETURN FLIGHT RESULTS --- *@
+    @if (Model.IsRoundTrip && Model.ReturnFlights != null && Model.ReturnFlights.Any())
+    {
+        <div class="mt-5">
+            <h3 class="mb-3 text-info"><i class="bi bi-arrow-left-circle"></i> Return Flights</h3>
+            <div class="table-responsive shadow-sm rounded">
+                <table class="table table-hover align-middle bg-white border-info border-top border-4">
+                    <thead class="table-info">
+                        <tr>
+                            <th>Flight #</th>
+                            <th>Route</th>
+                            <th>Schedule</th>
+                            <th>Price</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.ReturnFlights)
+                        {
+                            <tr>
+                                <td class="fw-bold">@item.FlightNumber</td>
+                                <td>
+                                    <span class="fw-bold text-info">@item.FromAirport?.Code</span>
+                                    <i class="bi bi-arrow-right mx-1"></i>
+                                    <span class="fw-bold text-info">@item.ToAirport?.Code</span>
+                                    <br /><small class="text-muted">@item.FromAirport?.City to @item.ToAirport?.City</small>
+                                </td>
+                                <td>
+                                    <div><i class="bi bi-calendar3"></i> @item.DepartureTime.ToString("dd MMM yyyy")</div>
+                                    <small class="text-muted">@item.DepartureTime.ToString("HH:mm") - @item.ArrivalTime.ToString("HH:mm")</small>
+                                </td>
+                                <td class="h5 text-success fw-bold">@item.Price.ToString("C", CultureInfo.CreateSpecificCulture("en-US"))</td>
+                                <td class="text-end">
+                                    @* Logic: This button links the FIRST available outbound flight with THIS return flight *@
+                                    <a asp-controller="Bookings" asp-action="Create"
+                                       asp-route-flightId="@Model.OutboundFlights?.FirstOrDefault()?.Id"
+                                       asp-route-returnFlightId="@item.Id"
+                                       asp-route-isRoundTrip="true"
+                                       class="btn btn-primary btn-sm px-4 rounded-pill shadow-sm">
+                                        Book Round-Trip
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
     }
 </div>
@@ -129,4 +183,16 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+
+    <script>
+        function toggleReturnDate(isRoundTrip) {
+            const container = document.getElementById('returnDateContainer');
+            container.style.display = isRoundTrip ? 'block' : 'none';
+        }
+
+        window.onload = function() {
+            const isRoundTripChecked = document.getElementById('roundTrip').checked;
+            toggleReturnDate(isRoundTripChecked);
+        };
+    </script>
 }

@@ -34,31 +34,55 @@ namespace SUPFLY.Controllers
         [HttpGet]
         public IActionResult Search()
         {
-            ViewData["Airports"] = new SelectList(_context.Airports.OrderBy(a => a.Code), "Code", "Code");
+            // "Id" is what goes to the database (the value)
+            // "Code" is what the user sees in the list (the text)
+            ViewData["Airports"] = new SelectList(_context.Airports.OrderBy(a => a.Code), "Id", "Code");
+
             return View(new FlightSearchViewModel());
         }
 
         [AllowAnonymous]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Search(FlightSearchViewModel model)
+        public async Task<IActionResult> Search(FlightSearchViewModel vm)
         {
-            // Re-populate dropdowns in case we return the view
-            ViewData["Airports"] = new SelectList(_context.Airports, "Code", "Code");
+            // FIX: Use the same pattern as the GET method ("Id", "Code" or "Id", "City")
+            // If you want them to see "KHI", use "Code". If you want "Karachi", use "City".
+            ViewData["Airports"] = new SelectList(_context.Airports.OrderBy(a => a.City), "Id", "City");
 
-            if (!ModelState.IsValid) return View(model);
-
-            var results = await _context.Flights
+            // 1. Find Outbound Flights
+            vm.OutboundFlights = await _context.Flights
                 .Include(f => f.FromAirport)
                 .Include(f => f.ToAirport)
-                .Include(f => f.Aircraft)
-                .Where(f => f.FromAirport.Code == model.FromCode &&
-                            f.ToAirport.Code == model.ToCode &&
-                            f.DepartureTime.Date == model.DepartureDate.Date)
+                .Where(f => f.FromAirportId == vm.FromAirportId
+                         && f.ToAirportId == vm.ToAirportId
+                         && f.DepartureTime.Date == vm.DepartureDate.Date)
                 .ToListAsync();
 
-            ViewData["SearchResults"] = results;
-            return View(model);
+            // 2. Find Return Flights (Smart Logic)
+            if (vm.IsRoundTrip && vm.ReturnDate.HasValue)
+            {
+                vm.ReturnFlights = await _context.Flights
+                    .Include(f => f.FromAirport)
+                    .Include(f => f.ToAirport)
+                    .Where(f => f.FromAirportId == vm.ToAirportId  // Reversed for Return
+                             && f.ToAirportId == vm.FromAirportId  // Reversed for Return
+                             && f.DepartureTime.Date == vm.ReturnDate.Value.Date)
+                    .ToListAsync();
+
+                // Prevent "Time Travel"
+                if (vm.OutboundFlights.Any())
+                {
+                    var firstOutboundArrival = vm.OutboundFlights.Min(f => f.ArrivalTime);
+                    vm.ReturnFlights = vm.ReturnFlights
+                        .Where(rf => rf.DepartureTime > firstOutboundArrival)
+                        .ToList();
+                }
+            }
+
+            // If the search yields no results, we still return the View 
+            // The ViewData["Airports"] above ensures the dropdowns stay populated.
+            return View(vm);
         }
 
         // ----------------------------------------------------------------------------------

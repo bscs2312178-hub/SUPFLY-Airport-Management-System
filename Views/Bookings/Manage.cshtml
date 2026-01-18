@@ -1,0 +1,133 @@
+﻿@model IEnumerable<SUPFLY.Models.Booking>
+
+@{
+    ViewData["Title"] = "Manage Bookings";
+}
+
+<div class="container py-4">
+    @* --- SECTION 1: REVENUE DASHBOARD --- *@
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold text-dark"><i class="bi bi-graph-up-arrow text-primary"></i> Business Overview</h2>
+        <span class="text-muted small">Updated: @DateTime.Now.ToString("g")</span>
+    </div>
+
+    <div class="row g-3 mb-5">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-primary text-white h-100">
+                <div class="card-body">
+                    <h6 class="text-uppercase small fw-bold opacity-75">Total Revenue</h6>
+                    <h2 class="mb-0">@ViewBag.TotalRevenue.ToString("C")</h2>
+                    <i class="bi bi-cash-stack position-absolute top-50 end-0 translate-middle-y me-3 opacity-25 display-4"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-white border-start border-4 border-success h-100">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase small fw-bold">Total Bookings</h6>
+                    <h2 class="mb-0 text-dark">@ViewBag.TotalBookings</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-white border-start border-4 border-info h-100">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase small fw-bold">Active Trips</h6>
+                    <h2 class="mb-0 text-dark">@ViewBag.ActiveBookings</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-white border-start border-4 border-danger h-100">
+                <div class="card-body">
+                    <h6 class="text-muted text-uppercase small fw-bold">Cancellations</h6>
+                    <h2 class="mb-0 text-dark">@ViewBag.CancelledBookings</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* --- SECTION 2: SEARCH & TABLE --- *@
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h4 class="mb-0">Recent Reservations</h4>
+                </div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Passenger</th>
+                        <th>Flight Details</th>
+                        <th>Current Status</th>
+                        <th class="text-center">Action Update</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="fw-bold">#@item.Id</td>
+                            <td>
+                                <div class="d-flex flex-column">
+                                    <span>@item.Passenger?.FullName</span>
+                                    <small class="text-muted">@item.Passenger?.Email</small>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-primary">@item.Flight?.FlightNumber</div>
+                                <small>@item.Flight?.FromAirport?.Code <i class="bi bi-arrow-right"></i> @item.Flight?.ToAirport?.Code</small>
+                            </td>
+                            <td>
+                                @* Improved Badges to match MyBookings style *@
+                                @switch (item.Status)
+                                {
+                                    case "Confirmed":
+                                        <span class="badge rounded-pill bg-primary">Confirmed</span>
+                                        break;
+                                    case "Checked-In":
+
+                                        <span class="badge rounded-pill bg-info text-dark">Checked-In</span>
+                                        break;
+                                    case "Boarded":
+
+                                        <span class="badge rounded-pill bg-warning text-dark">Boarded</span>
+                                        break;
+                                    case "Completed":
+
+                                        <span class="badge rounded-pill bg-success">Completed</span>
+                                        break;
+                                    case "Cancelled":
+
+                                        <span class="badge rounded-pill bg-danger">Cancelled</span>
+                                        break;
+                                    default:
+
+                                        <span class="badge rounded-pill bg-secondary">@item.Status</span>
+                                        break;
+                                }
+                            </td>
+                            <td>
+                                <form asp-action="UpdateStatus" method="post" class="d-flex gap-2 justify-content-center">
+                                    <input type="hidden" name="id" value="@item.Id" />
+                                    <select name="newStatus" class="form-select form-select-sm w-auto">
+                                        <option value="Confirmed" selected="@(item.Status == "Confirmed")">Confirmed</option>
+                                        <option value="Checked-In" selected="@(item.Status == "Checked-In")">Checked-In</option>
+                                        <option value="Boarded" selected="@(item.Status == "Boarded")">Boarded</option>
+                                        <option value="Cancelled" selected="@(item.Status == "Cancelled")">Cancelled</option>
+                                        <option value="Completed" selected="@(item.Status == "Completed")">Completed</option>
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-dark">Update</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

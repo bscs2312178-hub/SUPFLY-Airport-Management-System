@@ -19,6 +19,7 @@ namespace SUPFLY.Models
         [Display(Name = "Last Name")]
         [StringLength(100)]
         public string LastName { get; set; }
+        public string FullName => $"{FirstName} {LastName}";
 
         [Required]
         [EmailAddress]

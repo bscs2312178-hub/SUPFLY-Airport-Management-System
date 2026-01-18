@@ -32,23 +32,27 @@
                             </a>
                         </li>
 
+                        @* Visible to all logged-in passengers *@
                         @if (User.Identity?.IsAuthenticated == true)
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Bookings" asp-action="MyBookings">My Bookings</a>
+                                <a class="nav-link text-dark" asp-controller="Bookings" asp-action="MyBookings">
+                                    <i class="bi bi-ticket-perforated"></i> My Bookings
+                                </a>
                             </li>
                         }
 
-                        @if (User.IsInRole("Admin") || User.IsInRole("Staff"))
+                        @* --- ADMIN & STAFF MANAGEMENT MENU --- *@
+                        @if (User.IsInRole("Admin") || User.IsInRole("Staff") || User.Identity?.Name == "admin@supfly.com")
                         {
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle text-primary" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="bi bi-gear"></i> Management
+                                    <i class="bi bi-gear-wide-connected"></i> Management
                                 </a>
-                                <ul class="dropdown-menu shadow" aria-labelledby="navbarDropdown">
+                                <ul class="dropdown-menu shadow-lg border-0" aria-labelledby="navbarDropdown">
                                     <li>
-                                        <a class="dropdown-item fw-bold text-primary" asp-controller="Bookings" asp-action="Dashboard">
-                                            <i class="bi bi-speedometer2"></i> Admin Dashboard
+                                        <a class="dropdown-item fw-bold text-primary" asp-controller="Bookings" asp-action="Manage">
+                                            <i class="bi bi- pencil-square"></i> Manage Statuses
                                         </a>
                                     </li>
                                     <li><hr class="dropdown-divider"></li>
@@ -56,9 +60,11 @@
                                     <li><a class="dropdown-item" asp-controller="Flights" asp-action="Index">Manage Flights</a></li>
                                     <li><a class="dropdown-item" asp-controller="Airports" asp-action="Index">Airports</a></li>
                                     <li><a class="dropdown-item" asp-controller="Aircraft" asp-action="Index">Aircraft Fleet</a></li>
+
                                     <li><hr class="dropdown-divider"></li>
+
                                     <li><a class="dropdown-item" asp-controller="Passengers" asp-action="Index">Passenger List</a></li>
-                                    <li><a class="dropdown-item" asp-controller="Bookings" asp-action="Index">All Reservations</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Bookings" asp-action="Index">Full Log (History)</a></li>
                                 </ul>
                             </li>
                         }
@@ -76,8 +82,8 @@
     </div>
 
     <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - SUPFLY - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        <div class="container text-center">
+            &copy; 2026 - SUPFLY - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy Policy</a>
         </div>
     </footer>
 

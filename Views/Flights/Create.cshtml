@@ -72,7 +72,15 @@
                 <input asp-for="Price" class="form-control" />
                 <span asp-validation-for="Price" class="text-danger"></span>
             </div>
+            <div class="form-group mb-3">
+                <label class="control-label fw-bold">Departure Date & Time</label>
+                <input asp-for="DepartureTime" class="form-control" type="datetime-local" />
+            </div>
 
+            <div class="form-group mb-3">
+                <label class="control-label fw-bold">Arrival Date & Time</label>
+                <input asp-for="ArrivalTime" class="form-control" type="datetime-local" />
+            </div>
             <div class="form-group">
                 <input type="submit" value="Create" class="btn btn-primary" />
             </div>
